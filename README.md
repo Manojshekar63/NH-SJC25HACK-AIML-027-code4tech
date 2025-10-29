@@ -1,4 +1,4 @@
-# Med-Concise — 24‑Hour Hackathon Build
+# Medical_Literature_Summary — 24‑Hour Hackathon Build
 
 Turn PubMed searches into concise, structured medical summaries using a local LLM via Ollama. Built in 24 hours to showcase fast, private, and auditable literature triage.
 
