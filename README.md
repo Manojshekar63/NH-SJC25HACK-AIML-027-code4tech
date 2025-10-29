@@ -1,73 +1,111 @@
-# Welcome to your Lovable project
+# Med-Concise — 24‑Hour Hackathon Build
 
-## Project info
+Turn PubMed searches into concise, structured medical summaries using a local LLM via Ollama. Built in 24 hours to showcase fast, private, and auditable literature triage.
 
-**URL**: https://lovable.dev/projects/8230537d-8ffb-4aa3-aec6-8f53a0138e1d
+## Why
+Clinicians and researchers waste time sifting abstracts. Med-Concise fetches relevant PubMed papers and produces short, structured summaries with confidence scores.
 
-## How can I edit this code?
+## What (Key Features)
+- PubMed retrieval for a query (top N papers)
+- Chunked LLM summarization with fallback extractive logic
+- Structured JSON output: key_findings, methodology, conclusion
+- Confidence scoring (LLM vs fallback)
+- Local inference via Ollama (privacy-friendly)
 
-There are several ways of editing your application.
+## Architecture (Quick)
+- Backend (Python) with:
+  - services/pubmed_service.py → fetch PubMed abstracts
+  - services/langchain_summarizer.py → chunk + summarize via Ollama, with safe fallback
+  - controllers/summarization_controller.py → orchestrate search → summarize → return JSON
+- Ollama model server (local)
+- Env-configurable model and ports
 
-**Use Lovable**
+## Quickstart
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/8230537d-8ffb-4aa3-aec6-8f53a0138e1d) and start prompting.
+### Prerequisites
+- Windows 10/11
+- Python 3.10+
+- Git
+- Ollama running locally: https://ollama.ai (then pull a model, e.g. `ollama pull llama3.1`)
 
-Changes made via Lovable will be committed automatically to this repo.
+### Setup
+```powershell
+# clone
+git clone https://github.com/<your-username>/<your-repo>.git
+cd med-concise-main
 
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+# create environment file
+# DO NOT COMMIT REAL KEYS
+# backend/env.local is already gitignored
 ```
 
-**Edit a file directly in GitHub**
+Create file backend/env.local:
+```env
+PUBMED_API_KEY=your_pubmed_api_key
+OLLAMA_HOST=http://localhost:11434
+OLLAMA_MODEL=llama3.1
+BACKEND_PORT=8000
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Install Python deps (example):
+```powershell
+python -m venv .venv
+.\.venv\Scripts\activate
+pip install -r backend/requirements.txt
+```
 
-**Use GitHub Codespaces**
+Start Ollama and pull a model:
+```powershell
+ollama serve
+ollama pull llama3.1
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Run the backend (choose what matches your app entrypoint):
+```powershell
+# If FastAPI with Uvicorn (adjust module if different)
+uvicorn backend.app:app --host 0.0.0.0 --port 8000 --reload
 
-## What technologies are used for this project?
+# Or run a script/module if provided
+python -m backend
+```
 
-This project is built with:
+### Programmatic Use (quick demo)
+```python
+from backend.controllers.summarization_controller import process_query
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+result = process_query("type 2 diabetes GLP-1 cardiovascular outcomes", num_papers=5)
+print(result["total_processed"], "papers")
+print(result["papers"][0]["summary"])
+```
 
-## How can I deploy this project?
+## API (if exposed)
+- POST /api/summarize (example): { "query": "your topic", "num_papers": 5 }
+- Returns: { success, query, timestamp, papers: [{ metadata..., summary, confidence_score }], total_processed }
 
-Simply open [Lovable](https://lovable.dev/projects/8230537d-8ffb-4aa3-aec6-8f53a0138e1d) and click on Share -> Publish.
+## Hackathon Constraints
+- Built in 24 hours; emphasis on working demo, stability, and privacy (local LLM)
+- Fallback extractive summarizer guarantees output even if the model fails
 
-## Can I connect a custom domain to my Lovable project?
+## Limitations
+- Abstract-only (no full-text)
+- Not a clinical decision tool
+- Model output may contain errors; citations recommended for verification
 
-Yes, you can!
+## Future Enhancements
+- Full RAG (embeddings + vector store + semantic retriever)
+- Provenance: sentence-level citations per bullet
+- Better evaluation and CI for factuality/regression
+- Caching and batching for throughput
+- Simple UI and multi-model selection
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## Development
+- Secrets in backend/env.local (gitignored)
+- Common ignores set in .gitignore (venv, node_modules, logs, cache)
+- Windows-friendly commands included
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## License
+MIT (or your choice)
+
+## Acknowledgments
+- PubMed/NCBI APIs
+- LangChain, Ollama, and open-source model communities
